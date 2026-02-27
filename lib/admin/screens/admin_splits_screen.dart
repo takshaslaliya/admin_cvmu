@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/dummy_data.dart';
-import '../../models/split_model.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/status_chip.dart';
+import 'package:splitease_test/core/models/dummy_data.dart';
+import 'package:splitease_test/core/models/split_model.dart';
+import 'package:splitease_test/core/theme/app_theme.dart';
+import 'package:splitease_test/user/widgets/status_chip.dart';
 
 class AdminSplitsScreen extends StatefulWidget {
   const AdminSplitsScreen({super.key});

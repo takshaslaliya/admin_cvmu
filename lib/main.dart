@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'theme/app_theme.dart';
-import 'screens/intro_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/create_split_screen.dart';
-import 'screens/split_details_screen.dart';
-import 'screens/share_screen.dart';
-import 'screens/admin/admin_dashboard_screen.dart';
-import 'screens/admin/admin_users_screen.dart';
-import 'screens/admin/admin_splits_screen.dart';
-import 'screens/admin/admin_analytics_screen.dart';
+import 'package:splitease_test/core/theme/app_theme.dart';
+import 'package:splitease_test/auth/screens/intro_screen.dart';
+import 'package:splitease_test/auth/screens/login_screen.dart';
+import 'package:splitease_test/user/screens/home_screen.dart';
+import 'package:splitease_test/user/screens/create_split_screen.dart';
+import 'package:splitease_test/admin/screens/admin_dashboard_screen.dart';
+import 'package:splitease_test/admin/screens/admin_users_screen.dart';
+import 'package:splitease_test/admin/screens/admin_splits_screen.dart';
+import 'package:splitease_test/admin/screens/admin_analytics_screen.dart';
 
 void main() {
   runApp(
@@ -48,12 +46,6 @@ class SplitEaseApp extends StatelessWidget {
             break;
           case '/create':
             page = const CreateSplitScreen();
-            break;
-          case '/details':
-            page = const SplitDetailsScreen();
-            break;
-          case '/share':
-            page = const ShareScreen();
             break;
           case '/admin':
             page = const AdminDashboardScreen();

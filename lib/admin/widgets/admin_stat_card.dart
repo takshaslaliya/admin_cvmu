@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:splitease_test/core/theme/app_theme.dart';
 
 class AdminStatCard extends StatelessWidget {
   final String label;

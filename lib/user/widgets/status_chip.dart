@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:splitease_test/core/theme/app_theme.dart';
 
 class StatusChip extends StatelessWidget {
   final bool isPaid;

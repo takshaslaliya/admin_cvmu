@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/dummy_data.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/admin_stat_card.dart';
-import '../../screens/home_screen.dart';
+import 'package:splitease_test/core/models/dummy_data.dart';
+import 'package:splitease_test/core/theme/app_theme.dart';
+import 'package:splitease_test/admin/widgets/admin_stat_card.dart';
+import 'package:splitease_test/user/screens/home_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -93,6 +93,27 @@ class AdminDashboardScreen extends StatelessWidget {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () =>
+                              Navigator.pushReplacementNamed(context, '/login'),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.error.withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.logout_rounded,
+                              color: AppColors.error,
+                              size: 20,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 10),
                         // Admin avatar
                         Container(
@@ -143,14 +164,16 @@ class AdminDashboardScreen extends StatelessWidget {
                         ),
                         AdminStatCard(
                           label: 'Total Settled',
-                          value: '₹21.8K',
+                          value:
+                              '₹${DummyData.totalSettled.toStringAsFixed(0)}',
                           icon: Icons.check_circle_outline_rounded,
                           iconColor: AppColors.paid,
                           iconBgColor: AppColors.paidBg,
                         ),
                         AdminStatCard(
                           label: 'Pending Amount',
-                          value: '₹30.5K',
+                          value:
+                              '₹${DummyData.totalPending.toStringAsFixed(0)}',
                           icon: Icons.pending_outlined,
                           iconColor: AppColors.error,
                           iconBgColor: AppColors.error.withValues(alpha: 0.1),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../../models/dummy_data.dart';
-import '../../theme/app_theme.dart';
+import 'package:splitease_test/core/models/dummy_data.dart';
+import 'package:splitease_test/core/theme/app_theme.dart';
 
 class AdminAnalyticsScreen extends StatelessWidget {
   const AdminAnalyticsScreen({super.key});

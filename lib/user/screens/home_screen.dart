@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/dummy_data.dart';
-import '../theme/app_theme.dart';
-import '../widgets/balance_card.dart';
-import '../widgets/split_card.dart';
+import 'package:splitease_test/core/models/dummy_data.dart';
+import 'package:splitease_test/core/theme/app_theme.dart';
+import 'package:splitease_test/user/widgets/balance_card.dart';
+import 'package:splitease_test/user/widgets/split_card.dart';
 
 class ThemeProvider extends ChangeNotifier {
   bool _isDark = false;
@@ -185,14 +185,7 @@ class HomeScreen extends StatelessWidget {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final split = DummyData.splits[index];
-                  return SplitCard(
-                    split: split,
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      '/details',
-                      arguments: split,
-                    ),
-                  );
+                  return SplitCard(split: split, onTap: () {});
                 }, childCount: DummyData.splits.length),
               ),
             ),

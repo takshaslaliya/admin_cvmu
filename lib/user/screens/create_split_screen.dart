@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/dummy_data.dart';
-import '../theme/app_theme.dart';
-import '../widgets/app_button.dart';
+import 'package:splitease_test/core/models/dummy_data.dart';
+import 'package:splitease_test/core/theme/app_theme.dart';
+import 'package:splitease_test/shared/widgets/app_button.dart';
 
 class CreateSplitScreen extends StatefulWidget {
   const CreateSplitScreen({super.key});
