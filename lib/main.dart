@@ -1,0 +1,102 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'theme/app_theme.dart';
+import 'screens/intro_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/create_split_screen.dart';
+import 'screens/split_details_screen.dart';
+import 'screens/share_screen.dart';
+import 'screens/admin/admin_dashboard_screen.dart';
+import 'screens/admin/admin_users_screen.dart';
+import 'screens/admin/admin_splits_screen.dart';
+import 'screens/admin/admin_analytics_screen.dart';
+
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const SplitEaseApp(),
+    ),
+  );
+}
+
+class SplitEaseApp extends StatelessWidget {
+  const SplitEaseApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    return MaterialApp(
+      title: 'SplitEase',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        Widget page;
+        switch (settings.name) {
+          case '/':
+            page = const IntroScreen();
+            break;
+          case '/login':
+            page = const LoginScreen();
+            break;
+          case '/home':
+            page = const HomeScreen();
+            break;
+          case '/create':
+            page = const CreateSplitScreen();
+            break;
+          case '/details':
+            page = const SplitDetailsScreen();
+            break;
+          case '/share':
+            page = const ShareScreen();
+            break;
+          case '/admin':
+            page = const AdminDashboardScreen();
+            break;
+          case '/admin/users':
+            page = const AdminUsersScreen();
+            break;
+          case '/admin/splits':
+            page = const AdminSplitsScreen();
+            break;
+          case '/admin/analytics':
+            page = const AdminAnalyticsScreen();
+            break;
+          default:
+            page = const IntroScreen();
+        }
+        return PageRouteBuilder(
+          settings: settings,
+          pageBuilder: (context, animation, secondaryAnimation) => page,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOut,
+              ),
+              child: SlideTransition(
+                position:
+                    Tween<Offset>(
+                      begin: const Offset(0.05, 0),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      ),
+                    ),
+                child: child,
+              ),
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 280),
+        );
+      },
+    );
+  }
+}
