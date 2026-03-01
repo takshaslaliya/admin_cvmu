@@ -13,11 +13,18 @@ class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _otpController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _isSignUp = false;
   bool _initDone = false;
+
+  // Login method: 'email' or 'mobile'
+  String _loginMethod = 'email';
+  // OTP step for email login
+  bool _otpSent = false;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -55,12 +62,35 @@ class _LoginScreenState extends State<LoginScreen>
   void dispose() {
     _animController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Email login: first press sends OTP, second press verifies
+    if (!_isSignUp && _loginMethod == 'email' && !_otpSent) {
+      setState(() {
+        _isLoading = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _otpSent = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('OTP sent to ${_emailController.text}! Use 1234.'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
@@ -341,6 +371,7 @@ class _LoginScreenState extends State<LoginScreen>
                         key: _formKey,
                         child: Column(
                           children: [
+                            // ── Sign Up fields ──────────────────────────────
                             if (_isSignUp) ...[
                               _buildField(
                                 isDark: isDark,
@@ -365,41 +396,141 @@ class _LoginScreenState extends State<LoginScreen>
                                     v!.isEmpty ? 'Enter your name' : null,
                               ),
                               SizedBox(height: 14),
+                              _buildEmailField(isDark),
+                              SizedBox(height: 14),
+                              _buildPasswordField(isDark),
                             ],
-                            _buildEmailField(isDark),
-                            SizedBox(height: 14),
-                            _buildPasswordField(isDark),
+
+                            // ── Sign In fields ──────────────────────────────
                             if (!_isSignUp) ...[
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: _showForgotPasswordDialog,
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.only(
-                                      top: 12,
-                                      bottom: 4,
+                              // Toggle: Email vs Mobile
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.darkBg
+                                      : AppColors.lightBg,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _loginToggle('Email', 'email', isDark),
+                                    _loginToggle('Mobile', 'mobile', isDark),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 18),
+
+                              // ── Email OTP flow ──
+                              if (_loginMethod == 'email') ...[
+                                _buildEmailField(isDark),
+                                if (_otpSent) ...[
+                                  SizedBox(height: 14),
+                                  TextFormField(
+                                    controller: _otpController,
+                                    keyboardType: TextInputType.number,
+                                    maxLength: 4,
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter 4-digit OTP',
+                                      prefixIcon: Icon(
+                                        Icons.pin_outlined,
+                                        size: 20,
+                                      ),
+                                      counterText: '',
                                     ),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
+                                    validator: (v) {
+                                      if (v == null || v.isEmpty) {
+                                        return 'Enter the OTP';
+                                      }
+                                      if (v != '1234') {
+                                        return 'Invalid OTP. Try 1234.';
+                                      }
+                                      return null;
+                                    },
                                   ),
-                                  child: Text(
-                                    'Forgot Password?',
-                                    style: TextStyle(
-                                      color: AppColors.primary,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+                                ],
+                              ],
+
+                              // ── Mobile Password flow ──
+                              if (_loginMethod == 'mobile') ...[
+                                TextFormField(
+                                  controller: _phoneController,
+                                  keyboardType: TextInputType.phone,
+                                  decoration: InputDecoration(
+                                    hintText: 'Mobile Number',
+                                    prefixIcon: Icon(
+                                      Icons.phone_outlined,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  validator: (v) {
+                                    if (v == null || v.isEmpty) {
+                                      return 'Enter mobile number';
+                                    }
+                                    if (v.length < 10) {
+                                      return 'Enter valid 10-digit number';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                SizedBox(height: 14),
+                                _buildPasswordField(isDark),
+                              ],
+
+                              // ── Forgot Password (email only) ──
+                              if (_loginMethod == 'email' && !_otpSent)
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: _showForgotPasswordDialog,
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.only(
+                                        top: 12,
+                                        bottom: 4,
+                                      ),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      'Forgot Password?',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
                             ],
+
                             SizedBox(height: 24),
                             AppButton(
-                              label: _isSignUp ? 'Create Account' : 'Sign In',
+                              label: _isSignUp
+                                  ? 'Create Account'
+                                  : (_loginMethod == 'email' && !_otpSent)
+                                  ? 'Send OTP'
+                                  : 'Sign In',
                               onPressed: _handleLogin,
                               isLoading: _isLoading,
                             ),
+                            if (!_isSignUp &&
+                                _loginMethod == 'email' &&
+                                _otpSent)
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _otpSent = false;
+                                    _otpController.clear();
+                                  });
+                                },
+                                child: Text(
+                                  'Resend OTP',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -434,6 +565,47 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                   ],
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _loginToggle(String label, String mode, bool isDark) {
+    final selected = _loginMethod == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (_loginMethod != mode) {
+            setState(() {
+              _loginMethod = mode;
+              _otpSent = false;
+              _otpController.clear();
+              _formKey.currentState?.reset();
+            });
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: EdgeInsets.all(4),
+          padding: EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected
+                    ? Colors.white
+                    : isDark
+                    ? AppColors.darkSubtext
+                    : AppColors.lightSubtext,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 14,
               ),
             ),
           ),
