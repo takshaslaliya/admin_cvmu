@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:splitease_test/core/models/group_model.dart';
 import 'package:splitease_test/core/services/group_service.dart';
 import 'package:splitease_test/core/theme/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GroupsTab extends StatefulWidget {
   const GroupsTab({super.key});
@@ -28,8 +30,20 @@ class _GroupsTabState extends State<GroupsTab> {
 
     if (result.success && result.data != null) {
       final List<dynamic> data = result.data;
+      final prefs = await SharedPreferences.getInstance();
+
+      final loadedGroups = data.map((g) {
+        final group = GroupModel.fromJson(g);
+        // Check for local icon
+        final localIcon = prefs.getString('group_icon_${group.id}');
+        if (localIcon != null && File(localIcon).existsSync()) {
+          group.customImageUrl = localIcon;
+        }
+        return group;
+      }).toList();
+
       setState(() {
-        _groups = data.map((g) => GroupModel.fromJson(g)).toList();
+        _groups = loadedGroups;
       });
     }
   }
@@ -161,9 +175,19 @@ class _GroupsTabState extends State<GroupsTab> {
                                         borderRadius: BorderRadius.circular(14),
                                         image: group.customImageUrl != null
                                             ? DecorationImage(
-                                                image: NetworkImage(
-                                                  group.customImageUrl!,
-                                                ),
+                                                image:
+                                                    group.customImageUrl!
+                                                        .startsWith('/')
+                                                    ? FileImage(
+                                                        File(
+                                                          group.customImageUrl!,
+                                                        ),
+                                                      )
+                                                    : NetworkImage(
+                                                            group
+                                                                .customImageUrl!,
+                                                          )
+                                                          as ImageProvider,
                                                 fit: BoxFit.cover,
                                               )
                                             : null,
@@ -241,29 +265,6 @@ class _GroupsTabState extends State<GroupsTab> {
                                           fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                      if (group.displayTotal > 0) ...[
-                                        SizedBox(height: 4),
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.pendingBg,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'Pending',
-                                            style: TextStyle(
-                                              color: AppColors.pending,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
                                     ],
                                   ),
                                 ],

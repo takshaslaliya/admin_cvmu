@@ -6,7 +6,7 @@ import 'package:splitease_test/core/services/auth_service.dart';
 class WhatsAppResult {
   final bool success;
   final String message;
-  final Map<String, dynamic>? data;
+  final dynamic data;
 
   WhatsAppResult({required this.success, required this.message, this.data});
 }
@@ -67,5 +67,17 @@ class WhatsAppService {
   /// 3. Disconnect WhatsApp
   static Future<WhatsAppResult> disconnect() async {
     return _request('POST', '/disconnect');
+  }
+
+  /// 4. Send bulk payment requests
+  static Future<WhatsAppResult> sendPayment({
+    required List<Map<String, String>> requests,
+    required String message,
+  }) async {
+    return _request(
+      'POST',
+      '/send-payment',
+      body: {'requests': requests, 'message': message},
+    );
   }
 }

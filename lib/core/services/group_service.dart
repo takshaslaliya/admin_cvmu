@@ -180,4 +180,17 @@ class GroupService {
   ) async {
     return _request('DELETE', '/$groupId/sub-groups/$subGroupId');
   }
+
+  // 11. Toggle Member Paid Status (NEW)
+  static Future<GroupResult> toggleMemberPaidStatus(
+    String subGroupId,
+    String memberId,
+    bool isPaid,
+  ) async {
+    return _request(
+      'PUT',
+      '/sub-groups/$subGroupId/members/$memberId/status',
+      body: {'is_paid': isPaid},
+    );
+  }
 }

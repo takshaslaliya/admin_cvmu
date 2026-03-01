@@ -5,7 +5,7 @@ class AppConfig {
 
   /// Backend base URL — includes the /api prefix.
   static const String apiBaseUrl =
-      'https://unprying-numerally-simone.ngrok-free.dev/api';
+      'https://slateblue-wildcat-506487.hostingersite.com/api';
 
   static const String authUrl = '$apiBaseUrl/auth';
 

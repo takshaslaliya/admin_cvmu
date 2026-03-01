@@ -2,11 +2,13 @@ class MemberSplit {
   final String id;
   final String name;
   final double amount;
+  final bool isPaid;
 
   const MemberSplit({
     required this.id,
     required this.name,
     required this.amount,
+    this.isPaid = false,
   });
 }
 

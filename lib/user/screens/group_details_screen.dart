@@ -9,6 +9,7 @@ import 'package:splitease_test/core/services/group_service.dart';
 import 'package:splitease_test/core/theme/app_theme.dart';
 import 'package:splitease_test/user/screens/add_expense_screen.dart';
 import 'package:splitease_test/user/screens/expense_details_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GroupDetailsScreen extends StatefulWidget {
   final GroupModel group;
@@ -37,6 +38,19 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
     });
     _initUser();
     _refreshGroup();
+    _loadLocalGroupIcon();
+  }
+
+  Future<void> _loadLocalGroupIcon() async {
+    final prefs = await SharedPreferences.getInstance();
+    final localPath = prefs.getString('group_icon_${_group.id}');
+    if (localPath != null && File(localPath).existsSync()) {
+      if (mounted) {
+        setState(() {
+          _group.customImageUrl = localPath;
+        });
+      }
+    }
   }
 
   Future<void> _initUser() async {
@@ -123,6 +137,10 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
             _isLoading = false;
             if (res.success) {
               _group.customImageUrl = image.path;
+              // Save locally
+              SharedPreferences.getInstance().then((prefs) {
+                prefs.setString('group_icon_${_group.id}', image.path);
+              });
             }
           });
 

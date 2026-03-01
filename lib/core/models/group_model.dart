@@ -65,6 +65,7 @@ class GroupModel {
                     amount: (m['expense_amount'] ?? 0.0) is int
                         ? (m['expense_amount'] as int).toDouble()
                         : (m['expense_amount'] ?? 0.0).toDouble(),
+                    isPaid: m['is_paid'] ?? false,
                   );
                 }).toList()
               : [],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:splitease_test/core/theme/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -44,8 +45,19 @@ class _DashboardTabState extends State<DashboardTab> {
 
     if (result.success && result.data != null) {
       final List<dynamic> data = result.data;
+      final prefs = await SharedPreferences.getInstance();
+
+      final loadedGroups = data.map((g) {
+        final group = GroupModel.fromJson(g);
+        final localIcon = prefs.getString('group_icon_${group.id}');
+        if (localIcon != null && File(localIcon).existsSync()) {
+          group.customImageUrl = localIcon;
+        }
+        return group;
+      }).toList();
+
       setState(() {
-        _groups = data.map((g) => GroupModel.fromJson(g)).toList();
+        _groups = loadedGroups;
       });
     }
   }

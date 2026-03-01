@@ -26,7 +26,7 @@ class _WhatsAppLinkSheetState extends State<WhatsAppLinkSheet>
   String? _statusMessage;
   bool _isNumberEntered = false;
   Timer? _timer;
-  int _timeLeft = 0;
+  final ValueNotifier<int> _timeLeftNotifier = ValueNotifier<int>(0);
   bool _isExpired = false;
   Uint8List? _qrBytes;
 
@@ -39,6 +39,7 @@ class _WhatsAppLinkSheetState extends State<WhatsAppLinkSheet>
   @override
   void dispose() {
     _timer?.cancel();
+    _timeLeftNotifier.dispose();
     _tabController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
@@ -47,13 +48,13 @@ class _WhatsAppLinkSheetState extends State<WhatsAppLinkSheet>
 
   void _startTimer(int seconds) {
     _timer?.cancel();
+    _timeLeftNotifier.value = seconds;
     setState(() {
-      _timeLeft = seconds;
       _isExpired = false;
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_timeLeft > 0) {
-        setState(() => _timeLeft--);
+      if (_timeLeftNotifier.value > 0) {
+        _timeLeftNotifier.value--;
       } else {
         _timer?.cancel();
         setState(() {
@@ -302,7 +303,7 @@ class _WhatsAppLinkSheetState extends State<WhatsAppLinkSheet>
                       _qrBase64 = null;
                       _pairingCode = null;
                       _timer?.cancel();
-                      _timeLeft = 0;
+                      _timeLeftNotifier.value = 0;
                       _isExpired = false;
                     }),
                     icon: Icon(Icons.edit_rounded, size: 20, color: subColor),
@@ -397,44 +398,52 @@ class _WhatsAppLinkSheetState extends State<WhatsAppLinkSheet>
                               ),
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.timer_outlined,
-                                  size: 14,
-                                  color: AppColors.whatsapp,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Expires in ${_formatTime(_timeLeft)}',
-                                  style: TextStyle(
-                                    color: AppColors.whatsapp,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Center(
-                              child: TextButton(
-                                onPressed: (90 - _timeLeft >= 10)
-                                    ? _sendOtp
-                                    : null,
-                                child: Text(
-                                  (90 - _timeLeft >= 10)
-                                      ? 'Regenerate Code'
-                                      : 'Regenerate in ${10 - (90 - _timeLeft)}s',
-                                  style: TextStyle(
-                                    color: (90 - _timeLeft >= 10)
-                                        ? AppColors.primary
-                                        : subColor,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
+                            ValueListenableBuilder<int>(
+                              valueListenable: _timeLeftNotifier,
+                              builder: (context, timeLeft, _) {
+                                return Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.timer_outlined,
+                                          size: 14,
+                                          color: AppColors.whatsapp,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Expires in ${_formatTime(timeLeft)}',
+                                          style: TextStyle(
+                                            color: AppColors.whatsapp,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    TextButton(
+                                      onPressed: (90 - timeLeft >= 10)
+                                          ? _sendOtp
+                                          : null,
+                                      child: Text(
+                                        (90 - timeLeft >= 10)
+                                            ? 'Regenerate Code'
+                                            : 'Regenerate in ${10 - (90 - timeLeft)}s',
+                                        style: TextStyle(
+                                          color: (90 - timeLeft >= 10)
+                                              ? AppColors.primary
+                                              : subColor,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -537,24 +546,30 @@ class _WhatsAppLinkSheetState extends State<WhatsAppLinkSheet>
                                       : const SizedBox(width: 180, height: 180),
                                 ),
                                 const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.timer_outlined,
-                                      size: 14,
-                                      color: AppColors.whatsapp,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Expires in ${_formatTime(_timeLeft)}',
-                                      style: TextStyle(
-                                        color: AppColors.whatsapp,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
+                                ValueListenableBuilder<int>(
+                                  valueListenable: _timeLeftNotifier,
+                                  builder: (context, timeLeft, _) {
+                                    return Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.timer_outlined,
+                                          size: 14,
+                                          color: AppColors.whatsapp,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Expires in ${_formatTime(timeLeft)}',
+                                          style: TextStyle(
+                                            color: AppColors.whatsapp,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               ],
                             )

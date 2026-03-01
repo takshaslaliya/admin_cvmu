@@ -27,8 +27,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
-    // Default: split among all members
+    // Default: split among all unique members
+    final Set<String> seenNames = {};
     for (var m in widget.group.members) {
+      if (seenNames.contains(m.name)) continue;
+      seenNames.add(m.name);
+
       _selectedParticipants.add(m.name);
       _customAmountControllers[m.name] = TextEditingController();
       _percentageControllers[m.name] = TextEditingController(
@@ -318,47 +322,56 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: widget.group.members.map((m) {
-                  final name = m.name;
-                  final selected = _selectedParticipants.contains(name);
-                  return FilterChip(
-                    label: Text(name),
-                    selected: selected,
-                    onSelected: (val) {
-                      setState(() {
-                        if (val) {
-                          _selectedParticipants.add(name);
-                          if (!_percentages.containsKey(name)) {
-                            _percentages[name] = 0.0;
-                            _percentageControllers[name] =
-                                TextEditingController(text: '0.0');
+                children: () {
+                  final Set<String> seen = {};
+                  final uniqueMembers = widget.group.members.where((m) {
+                    if (seen.contains(m.name)) return false;
+                    seen.add(m.name);
+                    return true;
+                  }).toList();
+
+                  return uniqueMembers.map((m) {
+                    final name = m.name;
+                    final selected = _selectedParticipants.contains(name);
+                    return FilterChip(
+                      label: Text(name),
+                      selected: selected,
+                      onSelected: (val) {
+                        setState(() {
+                          if (val) {
+                            _selectedParticipants.add(name);
+                            if (!_percentages.containsKey(name)) {
+                              _percentages[name] = 0.0;
+                              _percentageControllers[name] =
+                                  TextEditingController(text: '0.0');
+                            }
+                          } else {
+                            _selectedParticipants.remove(name);
                           }
-                        } else {
-                          _selectedParticipants.remove(name);
-                        }
-                      });
-                    },
-                    backgroundColor: surfaceColor,
-                    selectedColor: AppColors.primary.withValues(alpha: 0.15),
-                    checkmarkColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: selected ? AppColors.primary : textColor,
-                      fontWeight: selected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(
-                        color: selected
-                            ? AppColors.primary
-                            : (isDark
-                                  ? AppColors.darkSurfaceVariant
-                                  : AppColors.lightSurfaceVariant),
+                        });
+                      },
+                      backgroundColor: surfaceColor,
+                      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                      checkmarkColor: AppColors.primary,
+                      labelStyle: TextStyle(
+                        color: selected ? AppColors.primary : textColor,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
-                    ),
-                  );
-                }).toList(),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                          color: selected
+                              ? AppColors.primary
+                              : (isDark
+                                    ? AppColors.darkSurfaceVariant
+                                    : AppColors.lightSurfaceVariant),
+                        ),
+                      ),
+                    );
+                  }).toList();
+                }(),
               ),
 
               if (_splitType == 'Custom' &&
