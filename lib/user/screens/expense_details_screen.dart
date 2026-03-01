@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:splitease_test/core/models/dummy_data.dart';
 import 'package:splitease_test/core/models/expense_model.dart';
 import 'package:splitease_test/core/models/group_model.dart';
+import 'package:splitease_test/core/services/group_service.dart';
+import 'package:splitease_test/core/services/auth_service.dart';
 import 'package:splitease_test/core/theme/app_theme.dart';
 
-class ExpenseDetailsScreen extends StatelessWidget {
+class ExpenseDetailsScreen extends StatefulWidget {
   final GroupModel group;
   final ExpenseModel expense;
 
@@ -15,6 +16,143 @@ class ExpenseDetailsScreen extends StatelessWidget {
   });
 
   @override
+  State<ExpenseDetailsScreen> createState() => _ExpenseDetailsScreenState();
+}
+
+class _ExpenseDetailsScreenState extends State<ExpenseDetailsScreen> {
+  late ExpenseModel _expense;
+  bool _isLoading = false;
+  String? _currentUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _expense = widget.expense;
+    _initUser();
+  }
+
+  Future<void> _initUser() async {
+    final user = await AuthService.getUser();
+    if (mounted) {
+      setState(() => _currentUserId = user?['id']?.toString());
+    }
+  }
+
+  Future<void> _refreshExpense() async {
+    setState(() => _isLoading = true);
+    final res = await GroupService.fetchGroupDetails(widget.group.id);
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (res.success && res.data != null) {
+          final group = GroupModel.fromJson(res.data);
+          _expense = group.expenses.firstWhere((e) => e.id == _expense.id);
+        }
+      });
+    }
+  }
+
+  Future<void> _showEditMemberExpenseDialog(MemberSplit split) async {
+    final nameController = TextEditingController(text: split.name);
+    final amountController = TextEditingController(
+      text: split.amount.toStringAsFixed(0),
+    );
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+        final surfaceColor = isDark
+            ? AppColors.darkSurface
+            : AppColors.lightSurface;
+
+        return AlertDialog(
+          backgroundColor: surfaceColor,
+          title: Text(
+            'Edit Member Expense',
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  labelStyle: TextStyle(color: AppColors.primary),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                ),
+                style: TextStyle(color: textColor),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Amount (₹)',
+                  labelStyle: TextStyle(color: AppColors.primary),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                ),
+                style: TextStyle(color: textColor),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: TextStyle(color: textColor)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newName = nameController.text.trim();
+                final newAmount = double.tryParse(amountController.text) ?? 0;
+                Navigator.pop(context);
+
+                setState(() => _isLoading = true);
+                final res = await GroupService.updateMemberExpense(
+                  _expense.id, // This is the subGroupId
+                  split.id,
+                  newName,
+                  newAmount,
+                );
+
+                if (mounted) {
+                  setState(() => _isLoading = false);
+                  if (res.success) {
+                    _refreshExpense();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(res.message),
+                        backgroundColor: AppColors.primary,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(res.message),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+              ),
+              child: Text('Save', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surfaceColor = isDark
@@ -23,18 +161,27 @@ class ExpenseDetailsScreen extends StatelessWidget {
     final textColor = isDark ? AppColors.darkText : AppColors.lightText;
     final subColor = isDark ? AppColors.darkSubtext : AppColors.lightSubtext;
 
-    final paidByUser = DummyData.users.firstWhere(
-      (u) => u.id == expense.paidById,
-      orElse: () => DummyData.users.first,
-    );
+    final isCreator = widget.group.creatorId == _currentUserId;
+
+    final paidByName = _expense.paidById == 'me' ? 'You' : 'Group Member';
+    final initials = paidByName.substring(0, 1).toUpperCase();
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
       appBar: AppBar(
         title: Text(
-          expense.title,
+          _expense.title,
           style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
         ),
+        bottom: _isLoading
+            ? PreferredSize(
+                preferredSize: Size.fromHeight(2),
+                child: LinearProgressIndicator(
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              )
+            : null,
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: textColor),
@@ -71,7 +218,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    '₹${expense.amount.toStringAsFixed(0)}',
+                    '₹${_expense.amount.toStringAsFixed(0)}',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 40,
@@ -95,7 +242,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
                         ),
                         SizedBox(width: 8),
                         Text(
-                          '${expense.date.day}/${expense.date.month}/${expense.date.year}',
+                          '${_expense.date.day}/${_expense.date.month}/${_expense.date.year}',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -136,7 +283,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
                   CircleAvatar(
                     backgroundColor: AppColors.primary,
                     child: Text(
-                      paidByUser.avatarInitials,
+                      initials,
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -149,7 +296,7 @@ class ExpenseDetailsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          paidByUser.name,
+                          paidByName,
                           style: TextStyle(
                             color: textColor,
                             fontSize: 16,
@@ -157,16 +304,14 @@ class ExpenseDetailsScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          paidByUser.id == DummyData.currentUser.id
-                              ? 'You'
-                              : '@${paidByUser.name.toLowerCase().replaceAll(' ', '')}',
+                          '@${paidByName.toLowerCase().replaceAll(' ', '')}',
                           style: TextStyle(color: subColor, fontSize: 13),
                         ),
                       ],
                     ),
                   ),
                   Text(
-                    '₹${expense.amount.toStringAsFixed(0)}',
+                    '₹${_expense.amount.toStringAsFixed(0)}',
                     style: TextStyle(
                       color: AppColors.primary,
                       fontSize: 16,
@@ -199,19 +344,9 @@ class ExpenseDetailsScreen extends StatelessWidget {
                 ),
               ),
               child: Column(
-                children: expense.splitAmong.entries.map((entry) {
-                  final memberId = entry.key;
-                  final amount = entry.value;
-
-                  // In a real app we'd map this more robustly:
-                  final memberName = memberId == DummyData.currentUser.id
-                      ? 'You'
-                      : group.members
-                            .firstWhere(
-                              (m) => m.id == memberId,
-                              orElse: () => group.members.first,
-                            )
-                            .name;
+                children: _expense.splits.map((split) {
+                  final memberName = split.name;
+                  final amount = split.amount;
 
                   final initials = memberName.trim().isNotEmpty
                       ? memberName.trim().substring(0, 1).toUpperCase()
@@ -239,13 +374,31 @@ class ExpenseDetailsScreen extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    trailing: Text(
-                      '₹${amount.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '₹${amount.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (isCreator) ...[
+                          SizedBox(width: 8),
+                          IconButton(
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
+                            onPressed: () =>
+                                _showEditMemberExpenseDialog(split),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
+                      ],
                     ),
                   );
                 }).toList(),

@@ -66,6 +66,7 @@ class AuthService {
   static Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
   };
 
   /// Headers including the stored Bearer token — use for authenticated calls.
@@ -74,6 +75,7 @@ class AuthService {
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -228,5 +230,83 @@ class AuthService {
 
   static Future<void> logout() async {
     await clearSession();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 7. Get user profile — GET /api/user/profile
+  // ─────────────────────────────────────────────────────────────────────────
+
+  static Future<AuthResult> getProfile() async {
+    try {
+      final headers = await getAuthHeaders();
+      final response = await http
+          .get(Uri.parse('${AppConfig.userUrl}/profile'), headers: headers)
+          .timeout(const Duration(seconds: 15));
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 200 && decoded['success'] == true) {
+        // Update local session with fresh data
+        final userData = decoded['data'] as Map<String, dynamic>;
+        final currentToken = await getToken();
+        if (currentToken != null) {
+          await saveSession(currentToken, userData);
+        }
+      }
+
+      return AuthResult(
+        success: decoded['success'] == true,
+        message:
+            decoded['message'] ??
+            (decoded['success'] == true
+                ? 'Success'
+                : 'Failed to fetch profile'),
+        data: decoded['data'] as Map<String, dynamic>?,
+      );
+    } catch (e) {
+      return AuthResult(
+        success: false,
+        message: 'Network error. Please try again.',
+      );
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 8. Update user profile — PUT /api/user/profile
+  // ─────────────────────────────────────────────────────────────────────────
+
+  static Future<AuthResult> updateProfile(Map<String, dynamic> body) async {
+    try {
+      final headers = await getAuthHeaders();
+      final response = await http
+          .put(
+            Uri.parse('${AppConfig.userUrl}/profile'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 200 && decoded['success'] == true) {
+        // Update local session with fresh data
+        final userData = decoded['data'] as Map<String, dynamic>;
+        final currentToken = await getToken();
+        if (currentToken != null) {
+          await saveSession(currentToken, userData);
+        }
+      }
+
+      return AuthResult(
+        success: decoded['success'] == true,
+        message:
+            decoded['message'] ??
+            (decoded['success'] == true ? 'Profile updated' : 'Update failed'),
+        data: decoded['data'] as Map<String, dynamic>?,
+      );
+    } catch (e) {
+      return AuthResult(
+        success: false,
+        message: 'Network error. Please try again.',
+      );
+    }
   }
 }

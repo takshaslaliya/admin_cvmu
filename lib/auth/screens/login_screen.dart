@@ -350,8 +350,11 @@ class _LoginScreenState extends State<LoginScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: isDark
-                ? [Color(0xFF0F172A), Color(0xFF1E293B)]
-                : [Color(0xFFEFF6FF), Color(0xFFF3F4F6)],
+                ? [AppColors.bgGradientDarkTop, AppColors.bgGradientDarkBottom]
+                : [
+                    AppColors.bgGradientLightTop,
+                    AppColors.bgGradientLightBottom,
+                  ],
           ),
         ),
         child: SafeArea(

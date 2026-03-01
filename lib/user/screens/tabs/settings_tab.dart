@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:splitease_test/core/models/dummy_data.dart';
+import 'package:splitease_test/core/models/user_model.dart';
 import 'package:splitease_test/core/services/auth_service.dart';
-import 'package:splitease_test/core/theme/app_theme.dart';
+import 'package:splitease_test/core/services/whatsapp_service.dart';
 import 'package:splitease_test/user/widgets/whatsapp_link_sheet.dart';
+import 'package:splitease_test/core/theme/app_theme.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -15,8 +15,8 @@ class SettingsTab extends StatefulWidget {
 
 class _SettingsTabState extends State<SettingsTab> {
   bool _isWhatsAppLinked = false;
-  Map<String, dynamic>? _authUser;
-  String _upiId = 'Not set';
+  UserModel? _user;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -25,72 +25,166 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 
   Future<void> _loadUser() async {
-    final user = await AuthService.getUser();
-    final prefs = await SharedPreferences.getInstance();
-    final upi = prefs.getString('user_upi_id') ?? 'Not set';
+    setState(() => _isLoading = true);
+
+    // Load profile and whatsapp status in parallel
+    final results = await Future.wait([
+      AuthService.getProfile(),
+      WhatsAppService.getStatus(),
+    ]);
+
+    final profileRes = results[0] as AuthResult;
+    final whatsappRes = results[1] as WhatsAppResult;
+
     if (mounted) {
       setState(() {
-        _authUser = user;
-        _upiId = upi;
+        _isLoading = false;
+        if (profileRes.success && profileRes.data != null) {
+          _user = UserModel.fromJson(profileRes.data!);
+        } else if (!profileRes.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(profileRes.message),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        if (whatsappRes.success && whatsappRes.data != null) {
+          _isWhatsAppLinked = whatsappRes.data!['status'] == 'connected';
+        }
       });
     }
   }
 
-  Future<void> _editUpiId() async {
-    final ctrl = TextEditingController(text: _upiId == 'Not set' ? '' : _upiId);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark
-        ? AppColors.darkSurface
-        : AppColors.lightSurface;
+  void _showEditProfileDialog() {
+    if (_user == null) return;
+
+    final nameCtrl = TextEditingController(text: _user!.fullName);
+    final userCtrl = TextEditingController(text: _user!.username);
+    final mobileCtrl = TextEditingController(text: _user!.mobileNumber);
+    final upiCtrl = TextEditingController(text: _user!.upiId ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final textColor = isDark ? AppColors.darkText : AppColors.lightText;
+        final surfaceColor = isDark
+            ? AppColors.darkSurface
+            : AppColors.lightSurface;
+
+        return AlertDialog(
+          backgroundColor: surfaceColor,
+          title: Text(
+            'Edit Profile',
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildEditField('Full Name', nameCtrl, isDark),
+                _buildEditField('Username', userCtrl, isDark),
+                _buildEditField(
+                  'Mobile Number',
+                  mobileCtrl,
+                  isDark,
+                  TextInputType.phone,
+                ),
+                _buildEditField('UPI ID', upiCtrl, isDark),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: TextStyle(color: textColor)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                final body = <String, dynamic>{};
+                if (nameCtrl.text != _user!.fullName)
+                  body['full_name'] = nameCtrl.text;
+                if (userCtrl.text != _user!.username)
+                  body['username'] = userCtrl.text;
+                if (mobileCtrl.text != _user!.mobileNumber)
+                  body['mobile_number'] = mobileCtrl.text;
+                if (upiCtrl.text != (_user!.upiId ?? ''))
+                  body['upi_id'] = upiCtrl.text;
+
+                if (body.isNotEmpty) {
+                  _updateProfileMap(body);
+                }
+              },
+              child: Text(
+                'Save',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEditField(
+    String label,
+    TextEditingController ctrl,
+    bool isDark, [
+    TextInputType? type,
+  ]) {
     final textColor = isDark ? AppColors.darkText : AppColors.lightText;
     final subColor = isDark ? AppColors.darkSubtext : AppColors.lightSubtext;
 
-    final newUpi = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: surfaceColor,
-        title: Text(
-          'Update UPI ID',
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: ctrl,
+        keyboardType: type,
+        style: TextStyle(color: textColor),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: subColor),
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(
+              color: AppColors.primary.withValues(alpha: 0.3),
+            ),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: AppColors.primary),
+          ),
         ),
-        content: TextField(
-          controller: ctrl,
-          decoration: InputDecoration(
-            hintText: 'e.g. name@upi',
-            hintStyle: TextStyle(color: subColor),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.primary),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-          ),
-          style: TextStyle(color: textColor),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
-            child: Text(
-              'Save',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
       ),
     );
+  }
 
-    if (newUpi != null && newUpi.isNotEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_upi_id', newUpi);
-      if (mounted) setState(() => _upiId = newUpi);
+  Future<void> _updateProfileMap(Map<String, dynamic> body) async {
+    setState(() => _isLoading = true);
+    final res = await AuthService.updateProfile(body);
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (res.success && res.data != null) {
+          _user = UserModel.fromJson(res.data!);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Profile updated successfully!'),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res.message),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      });
     }
   }
 
@@ -113,8 +207,50 @@ class _SettingsTabState extends State<SettingsTab> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('WhatsApp Account Linked Successfully!'),
+          content: const Text('WhatsApp Account Linked Successfully!'),
           backgroundColor: AppColors.whatsapp,
+        ),
+      );
+    }
+  }
+
+  Future<void> _disconnectWhatsApp() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Disconnect WhatsApp?'),
+        content: const Text(
+          'Are you sure you want to disconnect your WhatsApp account? You will no longer receive notifications on WhatsApp.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Disconnect'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+    final res = await WhatsAppService.disconnect();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (res.success) {
+          _isWhatsAppLinked = false;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.message),
+          backgroundColor: res.success ? AppColors.primary : AppColors.error,
         ),
       );
     }
@@ -122,22 +258,11 @@ class _SettingsTabState extends State<SettingsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final dummyUser = DummyData.currentUser;
-    // Real user data from stored session; fall back to dummy while loading
-    final fullName = _authUser?['full_name'] as String? ?? dummyUser.name;
-    final email = _authUser?['email'] as String? ?? dummyUser.email;
-    final mobile = _authUser?['mobile_number'] as String? ?? '+91 98765 43210';
-    final username = _authUser?['username'] as String? ?? '';
-    // Build initials from real full name
-    final initials = fullName.trim().isNotEmpty
-        ? fullName
-              .trim()
-              .split(' ')
-              .map((w) => w[0])
-              .take(2)
-              .join()
-              .toUpperCase()
-        : 'U';
+    final fullName = _user?.fullName ?? 'User';
+    final email = _user?.email ?? 'user@example.com';
+    final mobile = _user?.mobileNumber ?? 'Not set';
+    final username = _user?.username ?? '';
+    final initials = _user?.initials ?? 'U';
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppColors.darkBg : AppColors.lightBg;
@@ -151,17 +276,20 @@ class _SettingsTabState extends State<SettingsTab> {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: bgColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'Settings',
-          style: TextStyle(
-            color: textColor,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        toolbarHeight: _isLoading ? 2 : 0,
+        bottom: _isLoading
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(2),
+                child: LinearProgressIndicator(
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              )
+            : null,
       ),
+      extendBodyBehindAppBar: true,
       body: SingleChildScrollView(
         padding: EdgeInsets.only(
           left: AppTheme.padding,
@@ -296,12 +424,15 @@ class _SettingsTabState extends State<SettingsTab> {
               ),
             ),
             SizedBox(height: 20),
-            Text(
-              fullName,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
+            GestureDetector(
+              onTap: _showEditProfileDialog,
+              child: Text(
+                fullName,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             SizedBox(height: 4),
@@ -318,9 +449,24 @@ class _SettingsTabState extends State<SettingsTab> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.lock_rounded, size: 12, color: subColor),
+                Icon(
+                  _user?.emailVerified == true
+                      ? Icons.verified_rounded
+                      : Icons.lock_rounded,
+                  size: 14,
+                  color: _user?.emailVerified == true
+                      ? AppColors.primary
+                      : subColor,
+                ),
                 SizedBox(width: 4),
-                Text(email, style: TextStyle(color: subColor, fontSize: 13)),
+                Text(
+                  email,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
             SizedBox(height: 32),
@@ -355,8 +501,8 @@ class _SettingsTabState extends State<SettingsTab> {
                     isDark: isDark,
                     icon: Icons.account_balance_wallet_rounded,
                     label: 'UPI ID',
-                    value: _upiId,
-                    onTap: _editUpiId,
+                    value: _user?.upiId ?? 'Not set',
+                    onTap: _showEditProfileDialog,
                   ),
                 ],
               ),
@@ -368,7 +514,7 @@ class _SettingsTabState extends State<SettingsTab> {
               children: [
                 _StatBox(
                   label: 'Total Splits',
-                  value: '${dummyUser.totalSplits}',
+                  value: '${_user?.totalSplits ?? 0}',
                   icon: Icons.receipt_long_rounded,
                   surfaceColor: surfaceColor,
                   textColor: textColor,
@@ -378,8 +524,9 @@ class _SettingsTabState extends State<SettingsTab> {
                 SizedBox(width: 16),
                 _StatBox(
                   label: 'Joined',
-                  value:
-                      '${dummyUser.joinDate.month}/${dummyUser.joinDate.year}',
+                  value: _user?.createdAt != null
+                      ? '${_user!.createdAt!.month}/${_user!.createdAt!.year}'
+                      : 'N/A',
                   icon: Icons.calendar_today_rounded,
                   surfaceColor: surfaceColor,
                   textColor: textColor,
@@ -468,11 +615,12 @@ class _SettingsTabState extends State<SettingsTab> {
                       color: AppColors.whatsapp.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(
-                      Icons
-                          .chat_bubble_rounded, // Alternative to WhatsApp icon since we don't have font_awesome
-                      color: AppColors.whatsapp,
-                      size: 24,
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Image.asset(
+                        'assets/images/whatsapp_logo.png',
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                   SizedBox(width: 16),
@@ -526,10 +674,29 @@ class _SettingsTabState extends State<SettingsTab> {
                       ),
                     )
                   else
-                    Icon(
-                      Icons.check_circle_rounded,
-                      color: AppColors.whatsapp,
-                      size: 28,
+                    GestureDetector(
+                      onTap: _disconnectWhatsApp,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.error.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Text(
+                          'Disconnect',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                 ],
               ),

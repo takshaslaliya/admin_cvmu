@@ -83,11 +83,15 @@ class _IntroScreenState extends State<IntroScreen>
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF062030), Color(0xFF0A1628), Color(0xFF062030)],
+              colors: [
+                AppColors.bgGradientDarkTop,
+                AppColors.darkBg,
+                AppColors.bgGradientDarkTop,
+              ],
             ),
           ),
           child: SafeArea(
@@ -144,13 +148,12 @@ class _IntroScreenState extends State<IntroScreen>
     return Column(
       children: [
         Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(32),
-            image: const DecorationImage(
+          width: 200,
+          height: 200,
+          decoration: const BoxDecoration(
+            image: DecorationImage(
               image: AssetImage('assets/images/app_logo.png'),
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
             ),
           ),
         ),
