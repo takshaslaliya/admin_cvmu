@@ -51,6 +51,9 @@ class DummyData {
       avatarInitials: 'PN',
       joinDate: DateTime(2024, 6, 5),
       totalSplits: 6,
+      isActive: true,
+      isUsingWhatsApp: false,
+      phoneNumber: '+91 66666 55555',
     ),
   ];
 
@@ -188,6 +191,11 @@ class DummyData {
   static double get youGet => 6250;
 
   static int get totalUsers => users.length;
+  static int get activeUsersCount => users.where((u) => u.isActive).length;
+  static int get inactiveUsersCount => users.where((u) => !u.isActive).length;
+  static int get whatsappUsersCount =>
+      users.where((u) => u.isUsingWhatsApp).length;
+
   static int get activeSplits => groups.length;
   static double get totalSettled =>
       groups.fold(0, (sum, g) => sum + g.paidAmount);

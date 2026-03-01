@@ -273,10 +273,175 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               textColor: textColor,
               subColor: subColor,
             ),
+            _DetailRow(
+              label: 'Account Status',
+              value: user.isActive ? 'Active' : 'Inactive',
+              textColor: user.isActive ? AppColors.paid : AppColors.error,
+              subColor: subColor,
+            ),
+            _DetailRow(
+              label: 'WhatsApp User',
+              value: user.isUsingWhatsApp ? 'Yes' : 'No',
+              textColor: user.isUsingWhatsApp ? const Color(0xFF25D366) : subColor,
+              subColor: subColor,
+            ),
             const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showEditUserSheet(context, user, isDark, textColor,
+                      subColor, surfaceColor);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Edit Details'),
+              ),
+            ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
+    );
+  }
+
+  void _showEditUserSheet(
+    BuildContext context,
+    UserModel user,
+    bool isDark,
+    Color textColor,
+    Color subColor,
+    Color surfaceColor,
+  ) {
+    final nameController = TextEditingController(text: user.name);
+    final emailController = TextEditingController(text: user.email);
+    final passwordController = TextEditingController(text: user.password);
+    bool isActive = user.isActive;
+    bool isUsingWhatsApp = user.isUsingWhatsApp;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: surfaceColor,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+              24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Edit User',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: Icon(Icons.close_rounded, color: subColor),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildTextField('Name', nameController, textColor, subColor),
+              const SizedBox(height: 12),
+              _buildTextField('Email', emailController, textColor, subColor),
+              const SizedBox(height: 12),
+              _buildTextField(
+                  'Password', passwordController, textColor, subColor,
+                  isPassword: true),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('Active Account',
+                    style: TextStyle(color: textColor, fontSize: 14)),
+                value: isActive,
+                onChanged: (v) => setModalState(() => isActive = v),
+                activeThumbColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('WhatsApp User',
+                    style: TextStyle(color: textColor, fontSize: 14)),
+                value: isUsingWhatsApp,
+                onChanged: (v) => setModalState(() => isUsingWhatsApp = v),
+                activeThumbColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // In a real app, we would update the database here.
+                    // For dummy data, we'll just show a success message.
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('User ${user.name} updated successfully!'),
+                        backgroundColor: AppColors.paid,
+                      ),
+                    );
+                    setState(() {}); // Refresh the list
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Save Changes'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      Color textColor, Color subColor,
+      {bool isPassword = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(color: subColor, fontSize: 12)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          obscureText: isPassword,
+          style: TextStyle(color: textColor, fontSize: 14),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: subColor.withValues(alpha: 0.2)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
