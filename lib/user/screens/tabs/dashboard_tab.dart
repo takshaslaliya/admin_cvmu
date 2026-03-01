@@ -6,23 +6,29 @@ class DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFE8F6F6,
-      ), // Base light cyan if gradient fails
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
       body: Container(
-        decoration: const BoxDecoration(
-          // Full screen light aqua gradient background
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF45F5E4), // Bright aqua top
-              Color(0xFF9FFDF2), // Mid light aqua
-              Color(0xFFE5FFFC), // Very light
-              Color(0xFFFFFFFF), // White at the bottom
-            ],
+            colors: isDark
+                ? [
+                    AppColors.bgGradientDarkTop,
+                    AppColors.bgGradientDarkTop,
+                    AppColors.bgGradientDarkBottom,
+                    AppColors.darkBg,
+                  ]
+                : [
+                    const Color(0xFF45F5E4), // Bright aqua top
+                    const Color(0xFF9FFDF2), // Mid light aqua
+                    const Color(0xFFE5FFFC), // Very light
+                    const Color(0xFFFFFFFF), // White at the bottom
+                  ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            stops: [0.0, 0.3, 0.6, 1.0],
+            stops: const [0.0, 0.3, 0.6, 1.0],
           ),
         ),
         child: SafeArea(
@@ -42,20 +48,26 @@ class DashboardTab extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: isDark
+                                  ? AppColors.darkSurface
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.currency_rupee_rounded,
-                              color: Color(0xFF0D2A3E),
+                              color: isDark
+                                  ? AppColors.primary
+                                  : const Color(0xFF0D2A3E),
                               size: 18,
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Text(
+                          Text(
                             'SplitEase',
                             style: TextStyle(
-                              color: Color(0xFF0D2A3E),
+                              color: isDark
+                                  ? AppColors.darkText
+                                  : const Color(0xFF0D2A3E),
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                             ),
@@ -64,9 +76,9 @@ class DashboardTab extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          _topIconBtn(Icons.person_outline_rounded),
+                          _topIconBtn(Icons.person_outline_rounded, isDark),
                           const SizedBox(width: 10),
-                          _topIconBtn(Icons.menu_rounded),
+                          _topIconBtn(Icons.menu_rounded, isDark),
                         ],
                       ),
                     ],
@@ -263,9 +275,13 @@ class DashboardTab extends StatelessWidget {
                       // Small History & Friends Options
                       Row(
                         children: [
-                          _smallAction(Icons.history_rounded, 'History'),
+                          _smallAction(
+                            Icons.history_rounded,
+                            'History',
+                            isDark,
+                          ),
                           const SizedBox(width: 16),
-                          _smallAction(Icons.group_rounded, 'Friends'),
+                          _smallAction(Icons.group_rounded, 'Friends', isDark),
                         ],
                       ),
                     ],
@@ -279,28 +295,41 @@ class DashboardTab extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.lightSurface,
+                      color: isDark
+                          ? AppColors.darkSurface
+                          : AppColors.lightSurface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.lightSurfaceVariant),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.darkSurfaceVariant
+                            : AppColors.lightSurfaceVariant,
+                      ),
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 6,
                     ),
-                    child: const TextField(
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    child: TextField(
+                      style: TextStyle(
+                        color: isDark
+                            ? AppColors.darkText
+                            : AppColors.lightText,
+                        fontSize: 14,
+                      ),
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.search,
                           color: AppColors.primary,
                           size: 20,
                         ),
                         hintText: 'Search Groups or Persons',
                         hintStyle: TextStyle(
-                          color: Color(0xFF8EB8C8),
+                          color: isDark
+                              ? AppColors.darkSubtext
+                              : const Color(0xFF8EB8C8),
                           fontSize: 14,
                         ),
                         isDense: true,
@@ -317,18 +346,20 @@ class DashboardTab extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Active',
                         style: TextStyle(
-                          color: Color(0xFF1D3A44),
+                          color: isDark
+                              ? AppColors.darkText
+                              : const Color(0xFF1D3A44),
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      Text(
+                      const Text(
                         'See All',
                         style: TextStyle(
-                          color: const Color(0xFF1CB0A0),
+                          color: Color(0xFF1CB0A0),
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -351,6 +382,7 @@ class DashboardTab extends StatelessWidget {
                         amount: '₹12.5K',
                         iconColor: const Color(0xFF144D59),
                         iconBg: const Color(0xFFD4EBEB),
+                        isDark: isDark,
                       ),
                       _buildSplitTile(
                         icon: Icons.restaurant_rounded,
@@ -360,6 +392,7 @@ class DashboardTab extends StatelessWidget {
                         iconColor: const Color(0xFF1CB0A0),
                         iconBg: const Color(0xFFE5FFFC),
                         isSubtitleColored: true,
+                        isDark: isDark,
                       ),
                     ],
                   ),
@@ -374,14 +407,18 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
-  static Widget _topIconBtn(IconData icon) {
+  static Widget _topIconBtn(IconData icon, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(6),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: const Color(0xFF0D2A3E), size: 18),
+      child: Icon(
+        icon,
+        color: isDark ? AppColors.darkText : const Color(0xFF0D2A3E),
+        size: 18,
+      ),
     );
   }
 
@@ -417,31 +454,40 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
-  static Widget _smallAction(IconData icon, String label) {
+  static Widget _smallAction(IconData icon, String label, bool isDark) {
     return Expanded(
       flex: 2,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? AppColors.darkSurfaceVariant : Colors.transparent,
+            width: isDark ? 1 : 0,
+          ),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
+            if (!isDark)
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
           ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: const Color(0xFF144D59), size: 24),
+            Icon(
+              icon,
+              color: isDark ? AppColors.primary : const Color(0xFF144D59),
+              size: 24,
+            ),
             const SizedBox(height: 6),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF144D59),
+              style: TextStyle(
+                color: isDark ? AppColors.darkText : const Color(0xFF144D59),
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 height: 1.2,
@@ -461,19 +507,25 @@ class DashboardTab extends StatelessWidget {
     required Color iconColor,
     required Color iconBg,
     bool isSubtitleColored = false,
+    required bool isDark,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? AppColors.darkSurfaceVariant : Colors.transparent,
+          width: isDark ? 1 : 0,
+        ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
         ],
       ),
       child: Row(
@@ -482,10 +534,14 @@ class DashboardTab extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: iconBg,
+              color: isDark ? AppColors.darkSurfaceVariant : iconBg,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Icon(
+              icon,
+              color: isDark ? AppColors.primary : iconColor,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -494,8 +550,10 @@ class DashboardTab extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFF1D3A44),
+                  style: TextStyle(
+                    color: isDark
+                        ? AppColors.darkText
+                        : const Color(0xFF1D3A44),
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -505,8 +563,10 @@ class DashboardTab extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     color: isSubtitleColored
-                        ? const Color(0xFF1CB0A0)
-                        : const Color(0xFF5E7A81),
+                        ? (isDark ? AppColors.primary : const Color(0xFF1CB0A0))
+                        : (isDark
+                              ? AppColors.darkSubtext
+                              : const Color(0xFF5E7A81)),
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -519,16 +579,16 @@ class DashboardTab extends StatelessWidget {
             children: [
               Text(
                 amount,
-                style: const TextStyle(
-                  color: Color(0xFF1D3A44),
+                style: TextStyle(
+                  color: isDark ? AppColors.darkText : const Color(0xFF1D3A44),
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 6),
-              const Icon(
+              Icon(
                 Icons.more_vert_rounded,
-                color: Color(0xFF1CB0A0),
+                color: isDark ? AppColors.darkSubtext : const Color(0xFF1CB0A0),
                 size: 18,
               ),
             ],

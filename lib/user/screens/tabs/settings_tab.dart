@@ -67,7 +67,7 @@ class _SettingsTabState extends State<SettingsTab> {
           left: AppTheme.padding,
           right: AppTheme.padding,
           top: AppTheme.padding,
-          bottom: 100, // Extra padding to clear the floating bottom nav
+          bottom: 140, // Extra padding to clear the floating bottom nav
         ),
         child: Column(
           children: [
