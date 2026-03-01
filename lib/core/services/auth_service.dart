@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:splitease_test/core/config/app_config.dart';
 
 /// Centralised result type so callers don't need to deal with exceptions.
 class AuthResult {
@@ -12,7 +13,7 @@ class AuthResult {
 }
 
 class AuthService {
-  static const String _baseUrl = 'https://api.splitease.app/api/auth';
+  static String get _baseUrl => AppConfig.authUrl;
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'auth_user';
 
