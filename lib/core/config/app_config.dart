@@ -9,6 +9,9 @@ class AppConfig {
 
   static const String authUrl = '$apiBaseUrl/auth';
 
+  /// Convenience getter for admin sub-path
+  static const String adminUrl = '$apiBaseUrl/admin';
+
   /// Convenience getter for groups sub-path
   static const String groupsUrl = '$apiBaseUrl/groups';
 

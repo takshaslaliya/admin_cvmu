@@ -58,10 +58,19 @@ class AppColors {
   static Color error = Color(0xFFEF4444);
 
   // Admin accent
-  static Color adminAccent = Color(0xFF7C3AED);
+  static Color adminAccent = Color(0xFFFFD700); // Gold
+  static Color adminPrimary = Color(0xFF673AB7); // Deep Purple
+  static Color adminBgDark = Color(0xFF000000); // True Black
+  static Color adminSurfaceDark = Color(
+    0xFF140C20,
+  ); // Very deep purple/black surface
+  static Color adminSurfaceVariantDark = Color(
+    0xFF271B3E,
+  ); // Lighter purple-black for borders
+
   static const List<Color> adminGradient = [
-    Color(0xFF7C3AED),
-    Color(0xFF5B21B6),
+    Color(0xFF8E24AA), // Lighter purple
+    Color(0xFF673AB7), // Primary deep purple
   ];
 
   // Social
